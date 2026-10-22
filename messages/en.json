@@ -1,0 +1,121 @@
+{
+    "Common": {
+        "labels": {
+            "nickname": "Your nickName",
+            "code": "Room code",
+            "online": "Online",
+            "offline": "Offline",
+            "ready": "Ready",
+            "notReady": "Not Ready",
+            "host": "Host",
+            "players": "Players",
+            "you": "(you)",
+            "selected": "Selected",
+            "getReady": "Get Ready",
+            "scoreboard": "Scoreboard"
+        },
+        "actions": {
+            "back": "Back",
+            "createRoom": "Create a Room",
+            "joinRoom": "Join A Room",
+            "updating": "Updating...",
+            "findingYourRoom": "Finding your room...",
+            "start": "Start",
+            "ready": "I'm Ready",
+            "quit": "Quit"
+        },
+        "errors": {
+            "title": "Something went wrong",
+            "description": "We couldn't connect to this room. Please try again.",
+            "action": "Try again",
+            "notFound": {
+                "title": "We couldn't find room {code}",
+                "description": "The code might be wrong, or the room may have closed.",
+                "action": "Try another code"
+            }
+        }
+    },
+    "HomePage": {
+        "Hero": {
+            "title": "Pick a game.\nLand in a <room>room</room> .\nPlay in seconds.",
+            "description": "fast party games built for a random crowd or your whole group chat. No downloads, no sign-up walls, no waiting for everyone to get ready.",
+            "note": "Rounds run 60-90 seconds. Rooms hold up to 8."
+        },
+        "About": {
+            "title": "Two ways in",
+            "description": "Bring your own group, or drop into a room with whoever's around.\nSame games, different crowd."
+        }
+    },
+    "CreatePage": {
+        "title": "Create your room",
+        "description": "Pick a nickname, get a room code, and send it to your group chat. You choose the game once everyone’s in.",
+        "note": "For your group",
+        "codeLabel": "Room code",
+        "buttonLabel": "Create room",
+        "buttonLoadingLabel": "Creating your room…"
+    },
+    "JoinPage": {
+        "title": "Join a room",
+        "description": "Got a code from a friend? Drop it in below and\n pick a nickname to jump straight in.",
+        "note": "For right now",
+        "buttonLabel": "Join room",
+        "buttonLoadingLabel": "Finding your room…"
+    },
+    "LobbyPage": {},
+    "Games": {
+        "title": "What we're playing tonight",
+        "description": "Every game takes under two minutes to explain and under two rounds to master. Pick one to jump into a room.",
+        "golden-time": {
+            "title": "Golden Time",
+            "description": "Everyone stops a hidden timer as close to the target second as they can — no counting out loud, no peeking. Closest guess without going over takes the round.",
+            "category": "No prep",
+            "playersCount": "{min}-{max} players"
+        },
+        "wavelength": {
+            "title": "Wavelength",
+            "description": "One player picks a spot on a scale between two ideas and gives a clue. The rest of the room turns the dial to where they think it lands.",
+            "category": "Teams",
+            "playersCount": "{min}-{max} players"
+        },
+        "imposter": {
+            "title": "Imposter",
+            "description": "Everyone gets the same secret word — except one player. Drop hints, size up who's faking it, then vote before the impostor talks their way out.",
+            "category": "talk it out",
+            "playersCount": "{min}-{max} players"
+        },
+        "GameSelector": {
+            "title": "what are we playing",
+            "note": "Choose a game",
+            "hostOnly": "Only the host can change the game.",
+            "validation": {
+                "tooManyPlayers": "Too Many Players",
+                "tooFewPlayers": "Need {n} more",
+                "ready": "Ready to play",
+                "noSelectedGame": "Select a game to continue.",
+                "notEveryoneReady": "Everyone needs to be ready.",
+                "notEnoughPlayersForGame": "You need at least {min} players to play this game.",
+                "tooManyPlayersForGame": "This game supports a maximum of {max} players."
+            },
+            "starting": "Starting...",
+            "startGame" : "Start {title}",
+            "select": "Select a Game"
+        }
+    },
+    "GoldenTime": {
+        "round": "Round",
+        "lastRound": "Last Round",
+        "target": "Target",
+        "best": "Best",
+        "stop": "STOP",
+        "getReady": "Get Ready",
+        "resolving" : {
+            "p1": "Locking in the results…",
+            "p2": "Calculating everyone's scores."
+        },
+        "waiting": {
+            "lockedIn" : "Locked in",
+            "p1": "Waiting for the other players..."
+        }
+
+    }
+}

@@ -1,0 +1,293 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   1. Base Variables / Design Tokens (Moved to top so theme can read them)
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+/* ---- Light mode (default) ---- */
+:root {
+    --font-family-display:
+        var(--font-bricolage), "Segoe UI", system-ui, sans-serif;
+    --font-family-body: var(--font-inter), "Segoe UI", system-ui, sans-serif;
+    --tracking-display: -0.02em;
+    --leading-display: 1.03;
+    --leading-body: 1.55;
+
+    --ink: #16233a;
+    --ink-soft: rgb(22 35 58 / 66%);
+    --ink-faint: rgb(22 35 58 / 14%);
+    --chalk: #f3eede;
+    --chalk-soft: #eae2cb;
+    --paper: #f6f1e2;
+    --paper-card: #fbf8ee;
+
+    --coral: #e24b36;
+    --marigold: #e8a421;
+    --grass: #2f8a5b;
+    --periwinkle: #4c69c9;
+
+    --shadow-ink: rgb(22 35 58 / 90%);
+    --body-text: var(--ink);
+    color-scheme: light;
+}
+
+[lang="ar"] {
+    --font-family-display:
+        var(--font-el-messiri), "Segoe UI", Tahoma, Arial, sans-serif;
+    --font-family-body:
+        var(--font-cairo), "Segoe UI", Tahoma, Arial, sans-serif;
+
+    --tracking-display: normal;
+    /* Arabic script needs more vertical room for connecting strokes and
+        diacritics, so both scales get a taller line-height than the Latin
+        version. */
+    --leading-display: 1.35;
+    --leading-body: 1.85;
+}
+
+/* ---- Dark mode via OS preference ---- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --ink: #0f1728;
+        --chalk: #f3eede;
+        --chalk-soft: #d9d2ba;
+        --paper: #111a2c;
+        --paper-card: #18233a;
+
+        --coral: #ff6b52;
+        --marigold: #ffc24d;
+        --grass: #4fbd86;
+        --periwinkle: #8aa0f2;
+
+        --ink-soft: rgb(243 238 222 / 72%);
+        --ink-faint: rgb(243 238 222 / 16%);
+        --shadow-ink: rgb(0 0 0 / 60%);
+        --body-text: var(--chalk);
+        color-scheme: dark;
+    }
+}
+
+/* ---- Dark mode via explicit toggle (data-theme="dark" on <html>) ---- */
+:root[data-theme="dark"] {
+    --ink: #0f1728;
+    --chalk: #f3eede;
+    --chalk-soft: #d9d2ba;
+    --paper: #111a2c;
+    --paper-card: #18233a;
+
+    --coral: #ff6b52;
+    --marigold: #ffc24d;
+    --grass: #4fbd86;
+    --periwinkle: #8aa0f2;
+
+    --ink-soft: rgb(243 238 222 / 72%);
+    --ink-faint: rgb(243 238 222 / 16%);
+    --shadow-ink: rgb(0 0 0 / 60%);
+    --body-text: var(--chalk);
+    color-scheme: dark;
+}
+
+/* ==========================================================================
+   2. Tailwind v4 Theme Configuration
+   ========================================================================== */
+@theme {
+    /* Custom Variant Configuration */
+    --variant-dark: (&: where([data-theme= "dark"], [data-theme= "dark"] *));
+
+    /* Font Mapping */
+    --font-display: var(--font-family-display);
+    --font-body: var(--font-family-body);
+
+    --tracking-tight-display: var(--tracking-display);
+    --leading-tight-display: var(--leading-display);
+    --leading-relaxed-body: var(--leading-body);
+    /* Color Utilities mapping correctly to tokens */
+    --color-ink: var(--ink);
+    --color-ink-soft: var(--ink-soft);
+    --color-ink-faint: var(--ink-faint);
+    --color-chalk: var(--chalk);
+    --color-chalk-soft: var(--chalk-soft);
+    --color-paper: var(--paper);
+    --color-paper-card: var(--paper-card);
+    --color-body-text: var(--body-text);
+
+    --color-coral: var(--coral);
+    --color-marigold: var(--marigold);
+    --color-grass: var(--grass);
+    --color-periwinkle: var(--periwinkle);
+
+    --shadow-color-ink: var(--shadow-ink);
+
+    --radius-card: 22px;
+    --radius-pill: 999px;
+}
+
+/* ==========================================================================
+   3. Base HTML Elements (Tailwind v4 uses normal CSS cascade over @layer base)
+   ========================================================================== */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: hidden;
+    background-color: var(--paper);
+    color: var(--body-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+    font-variant-numeric: lining-nums;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-display);
+}
+::selection {
+    background: var(--coral);
+    color: var(--chalk);
+}
+
+:focus-visible {
+    outline: 3px solid var(--periwinkle);
+    outline-offset: 2px;
+}
+
+/* @media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+} */
+
+/* ==========================================================================
+   4. Custom Utilities (@utility works standalone in v4)
+   ========================================================================== */
+@utility shadow-poke {
+    box-shadow: 6px 6px 0 var(--ink);
+}
+@utility shadow-poke-lg {
+    box-shadow: 8px 8px 0 var(--ink);
+}
+@utility shadow-poke-coral {
+    box-shadow: 6px 6px 0 var(--coral);
+}
+@utility shadow-poke-coral-lg {
+    box-shadow: 10px 10px 0 var(--coral);
+}
+@utility shadow-poke-marigold {
+    box-shadow: 6px 6px 0 var(--marigold);
+}
+@utility shadow-poke-marigold-lg {
+    box-shadow: 10px 10px 0 var(--marigold);
+}
+@utility shadow-poke-grass {
+    box-shadow: 6px 6px 0 var(--grass);
+}
+@utility shadow-poke-grass-lg {
+    box-shadow: 10px 10px 0 var(--grass);
+}
+@utility shadow-poke-periwinkle {
+    box-shadow: 6px 6px 0 var(--periwinkle);
+}
+@utility shadow-poke-periwinkle-lg {
+    box-shadow: 10px 10px 0 var(--periwinkle);
+}
+.button {
+    display: inline-block;
+    transition-property: all;
+    border-radius: 24px;
+    padding: 8px 16px;
+    color: var(--chalk);
+    transition-duration: 150ms;
+    box-shadow: 6px 6px 0 var(--ink);
+    cursor: pointer;
+    font-weight: 600;
+    transform: translate(0, 0); 
+
+    &:hover {
+        transform: translate(-2px, -2px) !important;
+        box-shadow: 8px 8px 0 var(--ink);
+        
+    }
+    &:active {
+        translate: 2px 2px;
+        box-shadow: 6px 6px 0 var(--ink);
+    }
+}
+
+.timer-cover {
+    /* "both" is important: backwards fill keeps the cover invisible during the 2s delay */
+    animation: coverFlipIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) 0.5s both;
+    transform-origin: top;
+    will-change: transform, opacity;
+}
+
+/*  */
+
+@keyframes coverFlipIn {
+    0% {
+transform: scale(1.04, 0);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.04, 1.04);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+}
+
+.timer-cover-exit {
+    transform-origin: bottom;
+    pointer-events: none;
+    /* "both" keeps the final collapsed state after the animation ends */
+    animation: coverOpen 0.55s ease-in-out both;
+}
+
+@keyframes coverOpen {
+    0% {
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+    /* small "pop" anticipation before it goes away */
+    30% {
+        transform: scale(1.04, 1.04);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1, 0);
+        opacity: 1;
+    }
+}
+/* @keyframes coverFlipIn {
+    0% {
+        transform: perspective(1000px) scale(0.3) rotateX(60deg) rotateZ(-15deg);
+        opacity: 0;
+    }
+    60% {
+        transform: perspective(1000px) scale(1.05) rotateX(-8deg) rotateZ(2deg);
+        opacity: 1;
+    }
+    100% {
+        transform: perspective(1000px) scale(1) rotateX(0deg) rotateZ(0deg);
+        opacity: 1;
+    }
+} */
