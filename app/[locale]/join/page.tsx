@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RoomField } from "@/components/actions/RoomField";
 import { PlayerTag } from "@/components/actions/PlayerTag";
 import Link from "next/link";
@@ -14,11 +14,12 @@ const TOKEN_COLORS = ["coral", "marigold", "grass", "periwinkle"] as const;
 const CODE_LENGTH = 4;
 
 export default function JoinRoomPage() {
+  const searchParams = useSearchParams();
   const t = useTranslations("JoinPage");
   const tc = useTranslations("Common");
   const router = useRouter();
   const [nickname, setNickname] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(searchParams.get("code") || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,26 +34,63 @@ export default function JoinRoomPage() {
     if (error) setError("");
   }
 
-  async function handleJoin() {
-    if (!canSubmit) return;
-    setLoading(true);
-    setError("");
 
-    // TODO: replace with the real lookup, e.g.
-    const room = await findRoomByCode(code);
-    const user = await ensureAuthenticated()
-    const player : Player =  {
-            uid: user.uid,
-            nickname: trimmedName,
-            score: 0 ,
-            ready: false,
-            connected: true,
-            joinedAt:  Date.now(),
+async function handleJoin() {
+  if (!canSubmit) return;
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const user = await ensureAuthenticated();
+
+    const room = await findRoomByCode(cleanCode);
+
+    if (!room) {
+      throw new Error("ROOM_NOT_FOUND");
     }
-    await addPlayerToRoom(room?.id || "" , player);
 
-    router.push(`/room/${cleanCode}?nickname=${encodeURIComponent(trimmedName)}&uid=${player.uid}`);
+    if (room.status !== "waiting") {
+      throw new Error("ROOM_NOT_WAITING");
+    }
+
+    // Don't create a duplicate player if this user is already in the room.
+    const existingPlayer = room.players?.[user.uid];
+
+    if (existingPlayer) {
+      router.push(
+        `/room/${cleanCode}?nickname=${encodeURIComponent(existingPlayer.nickname)}&uid=${user.uid}`
+      );
+      return;
+    }
+
+    const player: Player = {
+      uid: user.uid,
+      nickname: trimmedName,
+      score: 0,
+      ready: false,
+      connected: true,
+      joinedAt: Date.now(),
+    };
+
+    await addPlayerToRoom(room.id, player);
+
+    router.push(
+      `/room/${cleanCode}?nickname=${encodeURIComponent(trimmedName)}&uid=${player.uid}`
+    );
+  } catch (error) {
+    console.error("Failed to join room:", error);
+
+    if (error instanceof Error && error.message === "ROOM_NOT_WAITING") {
+      setError("This room is currently playing or has finished.");
+    } else {
+      setError(tc("errors.notFound.description"));
+    }
+  } finally {
+    setLoading(false);
+  }
 }
+
 
   return (
     <main className="min-h-screen bg-paper">

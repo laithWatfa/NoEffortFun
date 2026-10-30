@@ -37,7 +37,7 @@ export async function createRoom(
 ) {
             const roomId = crypto.randomUUID();
     const code = generateRoomCode();
-
+    const createdAt = Date.now();
 
     const room = {
         id: roomId,
@@ -46,22 +46,23 @@ export async function createRoom(
         gameType,
         status: "waiting",
         currentRound: 0,
-        createdAt: Date.now(),
-
+        createdAt,
+        expiresAt: createdAt + 24 * 60 * 60 * 1000,
         players: {
         [host.uid]: host,
         },
     };
 
-    const updates: Record<string, unknown> = {
-        [`rooms/${roomId}`]: room,
-        [`roomCodes/${code}`]: roomId,
-    };
+    await set(ref(database, `rooms/${roomId}`), room);
 
-    await update(ref(database), updates);
+    try {
+        await set(ref(database, `roomCodes/${code}`), roomId);
+    } catch (error) {
+        await set(ref(database, `rooms/${roomId}`), null);
+        throw error;
+    }
+
     return room;
-
-
 }
 
 export async function findRoomByCode(
@@ -187,4 +188,23 @@ export async function selectGame(
     await updateRoom(roomId, {
         gameType,
     });
+}
+
+export async function returnRoomToLobby(
+  roomId: string,
+  playerIds: string[],
+) {
+  const updates: Record<string, unknown> = {
+    status: "waiting",
+    currentRound: 0,
+    gameType: null,
+    game: null,
+  };
+
+  for (const uid of playerIds) {
+    updates[`players/${uid}/score`] = 0;
+    updates[`players/${uid}/ready`] = false;
+  }
+
+  await update(ref(database, `rooms/${roomId}`), updates);
 }

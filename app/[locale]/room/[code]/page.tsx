@@ -9,6 +9,7 @@ import {
     bindPlayerPresence,
     updatePlayer,
     selectGame,
+    returnRoomToLobby,
 } from "@/services/room.service";
 import { GAMES } from "@/config/games";
 
@@ -28,6 +29,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageToggle from "@/components/ui/LanguageToggle";
 import { playSound } from "@/lib/sound";
 import { SoundToggle } from "@/components/actions/SoundToggle";
+import { CopyInviteLink } from "@/components/actions/CopyInviteLink";
 
 export default function RoomPage() {
     const { code } = useParams<{ code: string }>();
@@ -58,6 +60,47 @@ export default function RoomPage() {
         ? (GAMES.find((game) => game.id === room.gameType) ?? null)
         : GAMES[0];
 
+    const [endGameAction, setEndGameAction] = useState<
+        "replay" | "lobby" | null
+    >(null);
+
+    async function handlePlayAgain() {
+        if (
+            !room ||
+            !isHost ||
+            room.status !== "finished" ||
+            room.gameType !== "golden-time" ||
+            endGameAction
+        ) {
+            return;
+        }
+
+        setEndGameAction("replay");
+
+        try {
+            await startGoldenTimeGame(room.id, Object.keys(room.players));
+        } catch (error) {
+            console.error("Failed to start another Golden Time match:", error);
+        } finally {
+            setEndGameAction(null);
+        }
+    }
+
+    async function handleAnotherGame() {
+        if (!room || !isHost || room.status !== "finished" || endGameAction) {
+            return;
+        }
+
+        setEndGameAction("lobby");
+
+        try {
+            await returnRoomToLobby(room.id, Object.keys(room.players));
+        } catch (error) {
+            console.error("Failed to return to lobby:", error);
+        } finally {
+            setEndGameAction(null);
+        }
+    }
     const lobby = getRoomLobbyState(room);
 
     useGoldenTimeCoordinator({
@@ -100,12 +143,10 @@ export default function RoomPage() {
                  * The host was already added when the room
                  * was created.
                  */
-                const existingPlayer = found.players?.[userId??""];
+                const existingPlayer = found.players?.[userId ?? ""];
 
                 if (!isCurrentUserHost && !hasJoined.current) {
                     hasJoined.current = true;
-
-
 
                     /*
                      * If the player already exists, don't create
@@ -162,7 +203,6 @@ export default function RoomPage() {
 
             unsubscribeRoom?.();
             unsubscribePresence?.();
-
         };
     }, [code, nickname, user?.uid, authLoading, router, setRoom, clearRoom]);
 
@@ -312,7 +352,11 @@ export default function RoomPage() {
                 userId={user?.uid ?? ""}
                 players={room.players}
                 game={goldenTimeGame}
+                isHost={isHost}
                 onQuit={handleQuit}
+                onPlayAgain={handlePlayAgain}
+                onAnotherGame={handleAnotherGame}
+                endGameAction={endGameAction}
             />
         );
     }
@@ -320,22 +364,23 @@ export default function RoomPage() {
     return (
         <main className="min-h-dvh bg-paper px-6 py-16">
             <div className="mx-auto">
-                <div className="flex justify-between">
+                <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-between mb-8">
                     <div>
                         <p className="mb-1 text-[13px] font-semibold text-body-text/60">
                             {tc("labels.code")}
                         </p>
 
-                        <h1 className="mb-8 font-display text-[40px] font-bold tracking-widest text-body-text">
+                        <h1 className="flex gap-4 items-start  font-display text-[40px] font-bold tracking-widest text-body-text">
                             {code}
+                            <CopyInviteLink roomCode={code} />
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <SoundToggle/>
-                        <ThemeToggle/>
+                    <div className="flex items-center gap-2 self-end md:self-auto">
+                        <SoundToggle />
+                        <ThemeToggle />
 
-                        <LanguageToggle/>
+                        <LanguageToggle />
                     </div>
                 </div>
 
@@ -364,7 +409,10 @@ export default function RoomPage() {
                         <button
                             type="button"
                             data-sound="click"
-                            onClick={() => {playSound("click"); handleToggleReady();}}
+                            onClick={() => {
+                                playSound("click");
+                                handleToggleReady();
+                            }}
                             disabled={actionLoading || !user || !room}
                             className={`button  mt-5 w-full rounded-pill border-2 border-ink px-5 py-3 font-display text-[14px] font-bold text-chalk transition-transform  disabled:cursor-not-allowed disabled:opacity-50 ${
                                 currentPlayer?.ready
@@ -375,8 +423,8 @@ export default function RoomPage() {
                             {actionLoading
                                 ? tc("actions.updating")
                                 : currentPlayer?.ready
-                                    ? tc("labels.ready") + " ✓"
-                                    : tc("actions.ready")}
+                                  ? tc("labels.ready") + " ✓"
+                                  : tc("actions.ready")}
                         </button>
                     </section>
                     <GameSelector

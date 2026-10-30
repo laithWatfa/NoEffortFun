@@ -12,7 +12,9 @@
             "you": "(you)",
             "selected": "Selected",
             "getReady": "Get Ready",
-            "scoreboard": "Scoreboard"
+            "scoreboard": "Scoreboard",
+            "copied":" Copied!"
+            
         },
         "actions": {
             "back": "Back",
@@ -22,7 +24,13 @@
             "findingYourRoom": "Finding your room...",
             "start": "Start",
             "ready": "I'm Ready",
-            "quit": "Quit"
+            "quit": "Quit",
+            "copyLink": "Copy Link",
+            "playAgain": "Play Again",
+            "returning": "Returning To Lobby...",
+            "starting": "Starting...",
+            "anotherGame": "Try Another Game",
+            "waitingForHost": "Waiting For Host"
         },
         "errors": {
             "title": "Something went wrong",

@@ -4,18 +4,32 @@ import type { GoldenTimeRound } from "@/types/golden-time";
 import type { Player } from "@/types/player";
 import { useTranslations } from "next-intl";
 
+import type { EndGameAction } from "./GoldenTimeGameView";
+import EndGameActions from "@/components/actions/EndGameActions";
+
 interface GoldenTimeResultsProps {
     round: GoldenTimeRound;
     players: Record<string, Player>;
     currentUserId: string;
+
+    isFinalRound: boolean;
+    isHost: boolean;
+    onPlayAgain: () => void;
+    onAnotherGame: () => void;
+    endGameAction: EndGameAction;
 }
 
 export function GoldenTimeResults({
     round,
     players,
     currentUserId,
+    isFinalRound,
+    isHost,
+    onPlayAgain,
+    onAnotherGame,
+    endGameAction,
 }: GoldenTimeResultsProps) {
-    const t = useTranslations()
+    const t = useTranslations();
     const results = Object.entries(round.players)
         .map(([uid, result]) => ({
             uid,
@@ -149,6 +163,15 @@ export function GoldenTimeResults({
                     })}
                 </div>
             </section>
+
+            {isFinalRound && (
+                <EndGameActions
+                    isHost={isHost}
+                    onAnotherGame={onAnotherGame}
+                    onPlayAgain={onPlayAgain}
+                    endGameAction={endGameAction}
+                />
+            )}
         </div>
     );
 }

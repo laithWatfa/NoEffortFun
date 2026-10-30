@@ -12,7 +12,8 @@
             "you": "(أنت)",
             "selected": "مختار",
             "getReady": "استعدوا",
-            "scoreboard": "لوحة النتائج"
+            "scoreboard": "لوحة النتائج",
+            "copied": "تم النسخ!"
         },
         "actions": {
             "back": "رجوع",
@@ -22,7 +23,13 @@
             "findingYourRoom": "عم ندور على غرفتك...",
             "start": "بلش",
             "ready": "أنا جاهز",
-            "quit": "بطلت العب"
+            "quit": "بطلت العب",
+            "copyLink": "انسخ الرابط",
+            "playAgain": "دور تاني",
+            "returning": "عم نرجع على اللوبي...",
+            "starting": "عم نبلش...",
+            "anotherGame": " تغير اللعبة",
+            "waitingForHost": "عم نستنى المضيف"
         },
         "errors": {
             "title": "صار في مشكلة",

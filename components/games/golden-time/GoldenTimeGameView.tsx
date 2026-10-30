@@ -1,7 +1,7 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-
 import type { GoldenTimeGame } from "@/types/golden-time";
 import type { Player } from "@/types/player";
 
@@ -11,15 +11,22 @@ import { GoldenTimeCountdown } from "./GoldenTimeCountdown";
 import { GoldenTimePlaying } from "./GoldenTimePlaying";
 import { GoldenTimeWaiting } from "./GoldenTimeWaiting";
 import { GoldenTimeResults } from "./GoldenTimeResults";
+
 import { useTranslations } from "next-intl";
 import { useCountdownSounds } from "@/hooks/use-countdown-sounds";
+
+export type EndGameAction = "replay" | "lobby" | null;
 
 interface GoldenTimeGameViewProps {
     roomId: string;
     userId: string;
     players: Record<string, Player>;
     game: GoldenTimeGame;
+    isHost: boolean;
     onQuit: () => void;
+    onPlayAgain: () => void;
+    onAnotherGame: () => void;
+    endGameAction: EndGameAction;
 }
 
 export function GoldenTimeGameView({
@@ -27,9 +34,13 @@ export function GoldenTimeGameView({
     userId,
     players,
     game,
+    isHost,
     onQuit,
+    onPlayAgain,
+    onAnotherGame,
+    endGameAction,
 }: GoldenTimeGameViewProps) {
-    const t = useTranslations("GoldenTime.resolving")
+    const t = useTranslations("GoldenTime.resolving");
     const round = game.round;
 
     const [countdown, setCountdown] = useState(0);
@@ -48,7 +59,6 @@ export function GoldenTimeGameView({
 
         const updateCountdown = () => {
             const remaining = round.countdownEndsAt - Date.now();
-
             setCountdown(Math.max(Math.ceil(remaining / 1000), 0));
         };
 
@@ -56,14 +66,14 @@ export function GoldenTimeGameView({
 
         const interval = window.setInterval(updateCountdown, 100);
 
-        return () => {
-            window.clearInterval(interval);
-        };
+        return () => window.clearInterval(interval);
     }, [round?.countdownEndsAt, round?.phase]);
 
     if (!round) {
         return null;
     }
+
+    const isFinalRound = round.roundNumber >= game.totalRounds;
 
     return (
         <main className="min-h-screen bg-paper px-4 py-5 sm:px-6">
@@ -106,7 +116,6 @@ export function GoldenTimeGameView({
                                 <div className="font-display text-2xl font-bold">
                                     {t("p1")}
                                 </div>
-
                                 <p className="text-sm text-body-text/60">
                                     {t("p2")}
                                 </p>
@@ -118,6 +127,11 @@ export function GoldenTimeGameView({
                                 round={round}
                                 players={players}
                                 currentUserId={userId}
+                                isFinalRound={isFinalRound}
+                                isHost={isHost}
+                                onPlayAgain={onPlayAgain}
+                                onAnotherGame={onAnotherGame}
+                                endGameAction={endGameAction}
                             />
                         )}
                     </div>

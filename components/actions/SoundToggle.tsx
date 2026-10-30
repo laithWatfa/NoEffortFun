@@ -37,7 +37,7 @@ export function SoundToggle() {
     const enabled = useSyncExternalStore(
         subscribeSound,
         getSoundEnabled,
-        () => true,
+        () => false,
     );
 
     function toggle() {

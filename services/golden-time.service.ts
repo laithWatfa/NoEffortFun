@@ -1,4 +1,4 @@
-import { get, onValue, ref, update, runTransaction } from "firebase/database";
+import { get, set, onValue, ref, update, runTransaction } from "firebase/database";
 import {
     GOLDEN_TIME_COUNTDOWN_MS,
     GOLDEN_TIME_TIMEOUT_AFTER_TARGET_MS,
@@ -36,13 +36,18 @@ export async function startGoldenTimeGame(roomId: string, playerIds: string[]) {
         round: firstRound,
     };
 
-    await update(ref(database, `rooms/${roomId}`), {
-        status: "playing",
-        currentRound: 1,
-        game: {
-            goldenTime: game,
-        },
-    });
+    const updates: Record<string, unknown> = {
+  status: "playing",
+  currentRound: 1,
+  game: { goldenTime: game },
+};
+
+for (const uid of playerIds) {
+  updates[`players/${uid}/score`] = 0;
+  updates[`players/${uid}/ready`] = false;
+}
+
+    await update(ref(database, `rooms/${roomId}`), updates);
 }
 
 export async function getGoldenTimeGame(
@@ -107,12 +112,12 @@ export async function submitGoldenTimeResult(
     uid: string,
     elapsedMs: number,
 ) {
-    const playerRef = ref(database, `${ROUND_PLAYERS_PATH(roomId)}/${uid}`);
+    const elapsedMsRef = ref(
+        database,
+        `${ROUND_PLAYERS_PATH(roomId)}/${uid}/elapsedMs`,
+    );
 
-    await update(playerRef, {
-        elapsedMs,
-        timedOut: false,
-    });
+    await set(elapsedMsRef, elapsedMs);
 }
 
 export function createGoldenTimeRoundData(
@@ -241,7 +246,7 @@ export async function resolveGoldenTimeRound(roomId: string) {
     const playerInputs = Object.entries(latestRound.players).map(
         ([uid, player]) => ({
             uid,
-            elapsedMs: player.elapsedMs,
+            elapsedMs: player.elapsedMs ?? null,
             timedOut: player.timedOut || player.elapsedMs === null,
         }),
     );
@@ -258,11 +263,11 @@ export async function resolveGoldenTimeRound(roomId: string) {
      */
     for (const result of results) {
         updates[`${ROUND_PLAYERS_PATH(roomId)}/${result.uid}`] = {
-            elapsedMs: result.elapsedMs,
-            differenceMs: result.differenceMs,
-            rank: result.rank,
-            points: result.points,
-            timedOut: result.timedOut,
+            elapsedMs: result.elapsedMs ?? null,
+            differenceMs: result.differenceMs ?? null,
+            rank: result.rank ?? null,
+            points: result.points ?? 0,
+            timedOut: result.timedOut === true,
         };
 
         /*
@@ -271,7 +276,7 @@ export async function resolveGoldenTimeRound(roomId: string) {
         const currentScore = latestRoom.players?.[result.uid]?.score ?? 0;
 
         updates[`rooms/${roomId}/players/${result.uid}/score`] =
-            currentScore + result.points;
+            currentScore + (result.points ?? 0 );
     }
 
     const isFinalRound = latestRound.roundNumber >= GOLDEN_TIME_TOTAL_ROUNDS;
