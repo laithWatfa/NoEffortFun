@@ -5,6 +5,8 @@ import {
 
   update,
   onValue,
+  runTransaction,
+  remove,
 
 } from "firebase/database";
 
@@ -136,21 +138,87 @@ import { onDisconnect, serverTimestamp } from "firebase/database";
 /** Marks this player connected while their tab is open, and flips them to
  * disconnected automatically (server-side) the moment the connection drops —
  * tab closed, phone locked, wifi dies. No heartbeat/polling required. */
+
 export function bindPlayerPresence(roomId: string, uid: string) {
-    const connectedRef = ref(database, ".info/connected");
-    const playerConnectedRef = ref(database, `rooms/${roomId}/players/${uid}/connected`);
-    const playerLastSeenRef = ref(database, `rooms/${roomId}/players/${uid}/lastSeen`);
+  const connectedRef = ref(database, ".info/connected");
 
-    const unsubscribe = onValue(connectedRef, (snapshot) => {
-        if (snapshot.val() !== true) return;
+  const playerConnectedRef = ref(
+    database,
+    `rooms/${roomId}/players/${uid}/connected`
+  );
 
-        onDisconnect(playerConnectedRef).set(false);
-        onDisconnect(playerLastSeenRef).set(serverTimestamp());
-        set(playerConnectedRef, true);
-    });
+  const playerLastSeenRef = ref(
+    database,
+    `rooms/${roomId}/players/${uid}/lastSeen`
+  );
 
-    return unsubscribe;
+  const unsubscribe = onValue(connectedRef, async (snapshot) => {
+    if (snapshot.val() !== true) return;
+
+    try {
+      // Register server-side disconnect handlers first.
+      await Promise.all([
+        onDisconnect(playerConnectedRef).set(false),
+        onDisconnect(playerLastSeenRef).set(serverTimestamp()),
+      ]);
+
+      // Only mark the player connected after registration succeeds.
+      await set(playerConnectedRef, true);
+    } catch (error) {
+      console.error("Failed to register player presence:", error);
+    }
+  });
+
+  return unsubscribe;
 }
+
+
+export async function leaveRoom(roomId: string, uid: string) {
+    await remove(ref(database, `rooms/${roomId}/players/${uid}`));
+}
+
+
+export async function quitRoom(roomId: string, uid: string) {
+    const roomRef = ref(database, `rooms/${roomId}`);
+    const snapshot = await get(roomRef);
+
+    if (!snapshot.exists()) return;
+
+    const room = snapshot.val();
+
+    // Host quits: delete the room and invitation code atomically.
+    if (room.hostId === uid) {
+        await update(ref(database), {
+            [`rooms/${roomId}`]: null,
+            [`roomCodes/${room.code}`]: null,
+        });
+
+        return;
+    }
+
+    const player = room.players?.[uid];
+
+    if (!player) return;
+
+    const playerRef = ref(
+        database,
+        `rooms/${roomId}/players/${uid}`
+    );
+
+    // During a game, preserve the player record for game resolution.
+    if (room.status === "playing") {
+        await update(playerRef, {
+            connected: false,
+            lastSeen: serverTimestamp(),
+        });
+
+        return;
+    }
+
+    // In the lobby or finished state, remove the player completely.
+    await remove(playerRef);
+}
+
 
 
 export async function updatePlayer(
@@ -208,3 +276,80 @@ export async function returnRoomToLobby(
 
   await update(ref(database, `rooms/${roomId}`), updates);
 }
+
+
+
+const DISCONNECT_GRACE_PERIOD =  30 * 1000;
+
+export async function cleanupDisconnectedPlayers(
+  roomId: string,
+  hostUid: string
+) {
+  const roomRef = ref(database, `rooms/${roomId}`);
+
+  try {
+    const snapshot = await get(roomRef);
+
+    if (!snapshot.exists()) return;
+
+    const room = snapshot.val();
+
+    // Only the current host can perform cleanup.
+    if (room.hostId !== hostUid) return;
+
+    // Cleanup is only allowed in the lobby.
+    if (room.status !== "waiting") return;
+
+    const now = Date.now();
+
+    for (const [uid, player] of Object.entries(
+      room.players ?? {}
+    ) as [string,  Player][]) {
+      // Never remove the host.
+      if (uid === hostUid) continue;
+
+      // Only consider explicitly disconnected players.
+      if (player.connected !== false) continue;
+
+      if (typeof player.lastSeen !== "number") continue;
+
+      // Respect the grace period.
+      if (now - player.lastSeen < DISCONNECT_GRACE_PERIOD) {
+        continue;
+      }
+
+      // Re-read the latest player state before removal.
+      const latestRoomSnapshot = await get(roomRef);
+
+      if (!latestRoomSnapshot.exists()) return;
+
+      const latestRoom = latestRoomSnapshot.val();
+      const latestPlayer = latestRoom.players?.[uid];
+
+      if (
+        latestRoom.status !== "waiting" ||
+        latestRoom.hostId !== hostUid
+      ) {
+        return;
+      }
+
+      if (
+        !latestPlayer ||
+        latestPlayer.connected !== false ||
+        typeof latestPlayer.lastSeen !== "number" ||
+        Date.now() - latestPlayer.lastSeen < DISCONNECT_GRACE_PERIOD
+      ) {
+        continue;
+      }
+
+      await remove(
+        ref(database, `rooms/${roomId}/players/${uid}`)
+      );
+
+      console.log(`Removed disconnected player: ${uid}`);
+    }
+  } catch (error) {
+    console.error("Disconnected player cleanup failed:", error);
+  }
+}
+

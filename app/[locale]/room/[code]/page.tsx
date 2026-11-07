@@ -10,6 +10,9 @@ import {
     updatePlayer,
     selectGame,
     returnRoomToLobby,
+    cleanupDisconnectedPlayers,
+    leaveRoom,
+    quitRoom,
 } from "@/services/room.service";
 import { GAMES } from "@/config/games";
 
@@ -30,6 +33,7 @@ import LanguageToggle from "@/components/ui/LanguageToggle";
 import { playSound } from "@/lib/sound";
 import { SoundToggle } from "@/components/actions/SoundToggle";
 import { CopyInviteLink } from "@/components/actions/CopyInviteLink";
+import QuitButton from "@/components/actions/QuitButton";
 
 export default function RoomPage() {
     const { code } = useParams<{ code: string }>();
@@ -109,6 +113,39 @@ export default function RoomPage() {
     });
 
     useEffect(() => {
+        if (!room?.id || !user?.uid || !isHost || room.status !== "waiting") {
+            return;
+        }
+
+        let running = false;
+
+        async function runCleanup() {
+            // Avoid overlapping cleanup requests.
+            if (running) return;
+
+            running = true;
+
+            try {
+                await cleanupDisconnectedPlayers(room!.id, user!.uid);
+            } finally {
+                running = false;
+            }
+        }
+
+        // Run once when entering the lobby.
+        void runCleanup();
+
+        // Then check every 15 seconds.
+        const interval = setInterval(() => {
+            void runCleanup();
+        }, 15_000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [room?.id, room?.status, user?.uid, isHost]);
+
+    useEffect(() => {
         if (authLoading) return;
 
         const userId = user?.uid;
@@ -153,6 +190,10 @@ export default function RoomPage() {
                      * another player object.
                      */
                     if (!existingPlayer) {
+                        if (found.status !== "waiting") {
+                            setStatus("error");
+                            return;
+                        }
                         if (!nickname) {
                             router.replace(`/join?code=${code}`);
                             return;
@@ -206,9 +247,13 @@ export default function RoomPage() {
         };
     }, [code, nickname, user?.uid, authLoading, router, setRoom, clearRoom]);
 
-    function handleQuit() {
+    async function handleQuit() {
+        if (!room || !user) return;
+
+        await quitRoom(room.id, user.uid);
+
         clearRoom();
-        router.push(`/join?code=${code}`);
+        router.push("/");
     }
 
     /*
@@ -373,6 +418,7 @@ export default function RoomPage() {
                         <h1 className="flex gap-4 items-start  font-display text-[40px] font-bold tracking-widest text-body-text">
                             {code}
                             <CopyInviteLink roomCode={code} />
+                            <QuitButton onQuit={handleQuit} />
                         </h1>
                     </div>
 

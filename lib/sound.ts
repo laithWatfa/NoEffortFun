@@ -1,13 +1,9 @@
 export type SoundName =
     | "click"
     | "select"
-    | "ready"
     | "tick"
     | "go"
     | "stop"
-    | "reveal"
-    | "round"
-    | "win"
     | "keypress"
     | "error";
 
@@ -16,13 +12,9 @@ export type SoundName =
 const SOUND_FILES: Record<SoundName, string> = {
     click: "/sounds/click.wav",
     select: "/sounds/select.wav",
-    ready: "/sounds/ready.wav",
     tick: "/sounds/tick.ogg",
     go: "/sounds/go.wav",
     stop: "/sounds/stop.ogg",
-    reveal: "/sounds/reveal.wav",
-    round: "/sounds/round.wav",
-    win: "/sounds/win.wav",
     error: "/sounds/error.wav",
     keypress : "/sounds/keypress.wav"
 };
